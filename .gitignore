@@ -1,0 +1,19 @@
+# keep repo light
+__pycache__/
+*.pyc
+.env
+
+# do NOT commit PDFs
+documents/
+*.pdf
+
+# local caches
+*.log
+*.tmp
+*.cache
+
+# Optional editors
+.vscode/
+.idea/
+
+venv/
