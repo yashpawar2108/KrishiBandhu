@@ -1,0 +1,23 @@
+# requirements.txt for Farmer Assistant Chatbot
+fastapi
+uvicorn[standard]
+aiofiles
+pdfplumber
+requests
+python-dotenv
+sentence-transformers
+langchain
+langchain-community
+langchain-groq
+faiss-cpu
+pydantic
+python-multipart
+
+# Optional but recommended
+httpx
+loguru
+langdetect
+deep_translator
+SpeechRecognition
+pydub
+gTTS

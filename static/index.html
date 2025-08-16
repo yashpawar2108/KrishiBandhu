@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>KrishiBandhu — Farmer Assistant</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    :root{
+      --primary-green:#2d6a4f; --dark-green:#1b4332; --accent:#0077b6;
+      --muted:#f0f4f8; --card:#ffffff; --bg:#f4fbf7; --bot-bg:#f8f9fa;
+      --radius:12px; --glass: rgba(255,255,255,0.6); --error:#dc3545; --success:#28a745; --processing: #ff9800;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%; margin:0; font-family:'Poppins',system-ui,Arial; background:linear-gradient(180deg,var(--bg),#ffffff 60%);}
+    .app{display:grid; grid-template-columns: 2fr 1fr; gap:18px; height:100vh; padding:18px; align-items:stretch;}
+    /* Left chat area */
+    .panel{background:var(--card); border-radius:var(--radius); box-shadow:0 10px 30px rgba(16,24,40,0.06); overflow:hidden; display:flex; flex-direction:column;}
+    header.app-header{background:linear-gradient(90deg,var(--primary-green),var(--dark-green)); color:white; padding:16px 20px; display:flex; align-items:center; justify-content:space-between;}
+    header.app-header h1{margin:0; font-size:1.15rem; display:flex; gap:10px; align-items:center;}
+    .header-right{display:flex; gap:10px; align-items:center;}
+    .location-row{display:flex; gap:10px; background:var(--muted); padding:12px 16px; align-items:center;}
+    .location-row input{flex:1; border:1px solid #d6e6de; padding:8px 12px; border-radius:10px; font-size:0.95rem;}
+    /* Quick actions */
+    .quick-actions{display:flex; gap:8px; padding:10px 16px; background:transparent; flex-wrap:wrap;}
+    .quick-btn{background:linear-gradient(180deg,var(--light,#b7e4c7),#e6f6ea); border:none; padding:8px 12px; border-radius:999px; cursor:pointer; font-weight:600; color:var(--dark-green); box-shadow:0 4px 10px rgba(16,24,40,0.06); transition:all 0.2s ease;}
+    .quick-btn:hover{transform:translateY(-2px); box-shadow:0 8px 18px rgba(16,24,40,0.08);}
+    .quick-btn:active{transform:translateY(0px);}
+    /* Chat window */
+    .chat-window{flex:1; padding:18px; overflow:auto; display:flex; flex-direction:column; gap:12px; background:linear-gradient(0deg, rgba(255,255,255,0.6), transparent);}
+    .message{max-width:78%; padding:12px 16px; border-radius:18px; line-height:1.45; white-space:pre-wrap; word-break:break-word; animation:messageSlide 0.3s ease-out;}
+    @keyframes messageSlide{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    .user-message{margin-left:auto; background:var(--accent); color:white; border-bottom-right-radius:4px;}
+    .bot-message{margin-right:auto; background:var(--bot-bg); color:#0f1720; border:1px solid #e6eef0;}
+    .meta {font-size:0.82rem; opacity:0.8; margin-top:6px;}
+    .sources{font-size:0.85rem; color:var(--primary-green); margin-top:6px;}
+    .typing-indicator{display:none; margin-right:auto; padding:12px 16px; background:var(--bot-bg); border:1px solid #e6eef0; border-radius:18px; max-width:200px;}
+    .typing-dots{display:flex; gap:4px; align-items:center;}
+    .typing-dots span{width:8px; height:8px; border-radius:50%; background:#666; animation:typingBounce 1.4s infinite ease-in-out;}
+    .typing-dots span:nth-child(1){animation-delay:-0.32s}
+    .typing-dots span:nth-child(2){animation-delay:-0.16s}
+    @keyframes typingBounce{0%,80%,100%{transform:scale(0)}40%{transform:scale(1)}}
+    /* Input area */
+    .compose{display:flex; gap:8px; padding:14px; align-items:center; background:var(--muted); border-top:1px solid #e9f3ee;}
+    textarea#message-input{flex:1; border-radius:14px; padding:12px 14px; border:1px solid #dfeee6; resize:none; font-size:1rem; min-height:44px; max-height:140px;}
+    .controls{display:flex; gap:8px; align-items:center;}
+    .btn{background:var(--primary-green); color:white; border:none; padding:10px 14px; border-radius:10px; cursor:pointer; font-weight:600; transition:all 0.2s ease;}
+    .btn:hover{background:var(--dark-green); transform:translateY(-1px);}
+    .btn:disabled{opacity:0.6; cursor:not-allowed; transform:none;}
+    .btn.secondary{background:transparent; color:var(--primary-green); border:1px solid rgba(45,106,79,0.12);}
+    .btn.secondary:hover{background:rgba(45,106,79,0.05);}
+    .mic-btn{width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:linear-gradient(180deg,#fff,#edf8f0); border:1px solid #d6eadc; cursor:pointer; transition:all 0.3s ease; position:relative; overflow:hidden;}
+    .mic-btn:hover{transform:scale(1.05); box-shadow:0 4px 12px rgba(45,106,79,0.2);}
+    .mic-btn:active{transform:scale(0.95);}
+    /* Recording states */
+    .mic-recording{background:linear-gradient(180deg,#ffebee,#ffcdd2); border-color:#f44336; animation:recordPulse 2s infinite;}
+    .mic-recording .mic-icon{fill:#f44336;}
+    .mic-processing{background:linear-gradient(180deg,#fff3e0,#ffe0b2); border-color:var(--processing);}
+    .mic-processing .mic-icon{fill:var(--processing);}
+    @keyframes recordPulse{0%,100%{box-shadow:0 0 0 0 rgba(244,67,54,0.4)}50%{box-shadow:0 0 0 10px rgba(244,67,54,0)}}
+    /* Recording timer */
+    .recording-timer{position:absolute; bottom:110%; left:50%; transform:translateX(-50%); background:var(--error); color:white; padding:4px 8px; border-radius:12px; font-size:0.8rem; font-weight:600; white-space:nowrap;}
+    .recording-timer::after{content:''; position:absolute; top:100%; left:50%; transform:translateX(-50%); border:4px solid transparent; border-top-color:var(--error);}
+    /* Right sidebar */
+    .sidebar{display:flex; flex-direction:column; gap:12px; padding:14px; overflow-y:auto;}
+    .card{background:var(--card); border-radius:12px; padding:14px; box-shadow:0 6px 18px rgba(16,24,40,0.04);}
+    .chart {height:160px;}
+    .crop-calendar .item{display:flex; gap:8px; align-items:center; margin:6px 0;}
+    .small{font-size:0.9rem; color:#284b3a;}
+    .file-row{display:flex; gap:8px; align-items:center;}
+    .file-input{display:none;}
+    /* Toast */
+    .toast{position:fixed; right:20px; bottom:20px; background:#063; color:white; padding:12px 16px; border-radius:10px; box-shadow:0 10px 30px rgba(0,0,0,0.12); transform:translateY(calc(100% + 20px)); opacity: 0; transition:all 0.4s ease; z-index:1000;}
+    .toast.show{transform:translateY(0); opacity: 1;}
+    .toast.error{background:var(--error);}
+    .toast.success{background:var(--success);}
+    /* Loading states */
+    .spinner{display:inline-block; width:20px; height:20px; border:3px solid rgba(255,255,255,0.3); border-radius:50%; border-top-color:white; animation:spin 1s ease-in-out infinite;}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    /* Audio player styling */
+    .audio-player{background:rgba(45,106,79,0.05); border-radius:8px; padding:10px; margin-top:10px;}
+    .audio-player audio{width:100%; height:32px;}
+    /* responsive */
+    @media (max-width:900px){
+      .app{grid-template-columns:1fr; padding:10px;}
+      .sidebar{order:2; max-height:300px;}
+      .message{max-width:85%;}
+    }
+    @media (max-width:600px){
+      .quick-actions{flex-direction:column;}
+      .quick-btn{width:100%; text-align:center;}
+      .location-row{flex-direction:column; gap:8px;}
+      .location-row input, .location-row select{width:100%;}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="panel" aria-label="Chat panel">
+      <header class="app-header">
+        <h1>🌾 KrishiBandhu <small style="opacity:.9;font-weight:400">Farmer Assistant</small></h1>
+        <div class="header-right">
+            <span style="font-weight:600; font-size:0.95rem">Multi-language Support</span>
+        </div>
+      </header>
+
+      <div class="location-row" role="region" aria-label="location">
+        <span>📍</span>
+        <input id="location" placeholder="Enter village / city (e.g., Guwahati, IN)" value="Guwahati, Assam" />
+        <select id="output-language" title="Output language" style="padding:8px;border-radius:8px;border:1px solid #d6e6de;">
+          <option value="en" selected>English</option>
+          <option value="hi">हिन्दी</option>
+          <option value="bn">বাংলা</option>
+          <option value="mr">मराठी</option>
+          <option value="gu">ગુજરાતી</option>
+          <option value="ta">தமிழ்</option>
+          <option value="te">తెలుగు</option>
+          <option value="kn">ಕನ್ನಡ</option>
+          <option value="ml">മലയാളം</option>
+          <option value="as">অসমীয়া</option>
+          <option value="fr">Français</option>
+        </select>
+      </div>
+
+      <div class="quick-actions" role="toolbar" aria-label="Quick actions">
+        <button class="quick-btn" onclick="sendQuick('weather forecast')">🌦 Weather</button>
+        <button class="quick-btn" onclick="sendQuick('crop advice')">🌱 Crop Advice</button>
+        <button class="quick-btn" onclick="sendQuick('fertilizer guide')">💧 Fertilizer</button>
+        <button class="quick-btn" onclick="sendQuick('pesticide advice')">🪲 Pesticide</button>
+        <label class="quick-btn" style="cursor:pointer">
+          📄 Upload Soil Report
+          <input id="soil-file" class="file-input" type="file" accept="application/pdf" onchange="uploadSoilReport(event)" />
+        </label>
+      </div>
+
+      <main id="chat-window" class="chat-window" aria-live="polite" role="log"></main>
+
+      <div id="typing-indicator" class="typing-indicator">
+        <div class="typing-dots"><span></span><span></span><span></span></div>
+      </div>
+
+      <form id="compose" class="compose" onsubmit="onSend(event)">
+        <textarea id="message-input" placeholder="Ask your question here... (you can write in any language)" aria-label="Message"></textarea>
+        <div class="controls">
+          <button type="button" id="mic-btn" class="mic-btn" title="Record voice" aria-label="Record voice" onclick="toggleRecording()">
+            <div id="recording-timer" class="recording-timer" style="display:none;">00:00</div>
+            <svg id="mic-icon" class="mic-icon" width="20" height="20" viewBox="0 0 24 24">
+              <path fill="#2d6a4f" d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3z"/>
+              <path fill="#2d6a4f" d="M19 11a1 1 0 0 1 2 0 9 9 0 0 1-9 9 9 9 0 0 1-9-9 1 1 0 0 1 2 0 7 7 0 0 0 7 7 7 7 0 0 0 7-7z"/>
+            </svg>
+          </button>
+          <button type="button" class="btn secondary" onclick="onAttachClick()">📎 Attach</button>
+          <button type="submit" id="send-btn" class="btn">Send</button>
+        </div>
+      </form>
+    </section>
+
+    <aside class="sidebar">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><strong>📊 Forecast</strong><div class="small" style="margin-top:6px;">Temp & Rain (next 5 days)</div></div>
+          <button class="btn secondary" onclick="fetchWeather()">Refresh</button>
+        </div>
+        <div style="margin-top:12px;"><canvas id="tempChart" class="chart"></canvas></div>
+        <div style="margin-top:12px;"><canvas id="rainChart" class="chart"></canvas></div>
+      </div>
+
+      <div class="card crop-calendar">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><strong>🗓 Crop Calendar</strong><div class="small">Month-aware suggestions</div></div>
+        </div>
+        <div id="cropList" style="margin-top:12px"></div>
+      </div>
+      
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+            <strong>📄 Sources</strong>
+            <button class="btn secondary small" onclick="clearSources()" style="padding:4px 8px; font-size:0.8rem;">Clear</button>
+        </div>
+        <div id="sourcesList" class="small" style="margin-top:8px;color:var(--primary-green)">No sources yet.</div>
+      </div>
+    </aside>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+<script>
+/* ========= Configuration & State ========= */
+const AUTH_TOKEN = "sample_token_123";
+const API_BASE = "/api/v1/farmer";
+
+// DOM Elements
+const chatWindow = document.getElementById('chat-window');
+const messageInput = document.getElementById('message-input');
+const locationInput = document.getElementById('location');
+const outputLangSelect = document.getElementById('output-language');
+const sourcesList = document.getElementById('sourcesList');
+const typingIndicator = document.getElementById('typing-indicator');
+const sendBtn = document.getElementById('send-btn');
+const micBtn = document.getElementById('mic-btn');
+const micIcon = document.getElementById('mic-icon');
+const timerDisplay = document.getElementById('recording-timer');
+
+// Voice recording state
+let mediaRecorder;
+let audioChunks = [];
+let isRecording = false;
+let timerInterval;
+
+/* ========= UI Helpers ========= */
+function toast(msg, type = 'info', timeout = 4000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  clearTimeout(t._to);
+  t._to = setTimeout(() => t.className = 'toast', timeout);
+}
+
+function showTyping() { typingIndicator.style.display = 'block'; chatWindow.scrollTop = chatWindow.scrollHeight; }
+function hideTyping() { typingIndicator.style.display = 'none'; }
+
+function simpleMarkdown(text) {
+  return text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>'); // Bold
+}
+
+function appendMessage(text, sender = 'bot', sources = []) {
+  const el = document.createElement('div');
+  el.className = `message ${sender === 'user' ? 'user-message' : 'bot-message'}`;
+  
+  const contentDiv = document.createElement('div');
+  contentDiv.innerHTML = simpleMarkdown(text);
+  el.appendChild(contentDiv);
+  
+  if (sender === 'bot') {
+    el.innerHTML += `<div class="meta">${new Date().toLocaleTimeString()}</div>`;
+  }
+  
+  if (sources && sources.length) {
+    const sdiv = document.createElement('div');
+    sdiv.className = 'sources';
+    sdiv.innerHTML = '📄 Sources: ' + sources.map(s => `<span style="background:#e8f5e8;padding:2px 6px;border-radius:4px;margin:2px;display:inline-block">${s}</span>`).join(' ');
+    el.appendChild(sdiv);
+
+    const currentSources = new Set(sources);
+    if (sourcesList.textContent !== 'No sources yet.') {
+      sourcesList.querySelectorAll('div').forEach(s => currentSources.add(s.textContent));
+    }
+    sourcesList.innerHTML = Array.from(currentSources).map(s => 
+      `<div style="margin:4px 0; padding:4px 8px; background:#e8f5e8; border-radius:6px; border-left:3px solid var(--primary-green)">${s}</div>`
+    ).join('');
+  }
+  chatWindow.appendChild(el);
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+}
+
+function clearSources() {
+  sourcesList.innerHTML = 'No sources yet.';
+}
+
+/* ========= Crop Calendar ========= */
+function updateCropCalendar() {
+  const month = new Date().getMonth() + 1;
+  const CAL = {
+    1:["Wheat (rabi) sowing","Potato","Mustard"], 2:["Wheat maturing","Mustard harvest prep"],
+    3:["Sugarcane planting","Cotton sowing"], 4:["Maize sowing","Groundnut sowing"],
+    5:["Paddy transplanting (irrigated)"], 6:["Paddy active growth (kharif)"],
+    7:["Paddy - high water demand"], 8:["Paddy - monitor pests"],
+    9:["Paddy harvesting","Prepare for rabi sowing"], 10:["Sowing wheat (rabi)"],
+    11:["Wheat establishment","Soil testing"], 12:["Wheat growth","Irrigation & fertilizer"]
+  };
+  const list = document.getElementById('cropList');
+  list.innerHTML = (CAL[month] || ["No specific suggestions"]).map(it => 
+    `<div class="item"><div style="width:8px;height:8px;border-radius:50%;background:var(--primary-green)"></div><div>${it}</div></div>`
+  ).join('');
+}
+
+/* ========= Charts ========= */
+let tempChart, rainChart;
+function renderCharts(dates, highs, lows, rain) {
+  const options = { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: false } }, plugins: { legend: { position: 'top' } } };
+  if (tempChart) tempChart.destroy();
+  if (rainChart) rainChart.destroy();
+
+  tempChart = new Chart(document.getElementById('tempChart').getContext('2d'), {
+    type:'bar', data:{ labels: dates, datasets:[
+      {label:'High °C', data:highs, backgroundColor:'rgba(239,68,68,0.8)'},
+      {label:'Low °C', data:lows, backgroundColor:'rgba(59,130,246,0.8)'}
+    ]}, options: {...options, plugins: {...options.plugins, title: {display: true, text: 'Temperature Forecast'}}}
+  });
+  rainChart = new Chart(document.getElementById('rainChart').getContext('2d'), {
+    type:'line', data:{ labels: dates, datasets:[{
+      label:'Rain (mm)', data:rain, tension:0.3, fill:true, backgroundColor:'rgba(0,119,182,0.15)', borderColor:'#0077b6'
+    }]}, options: {...options, scales: {y:{beginAtZero: true}}, plugins: {...options.plugins, title: {display: true, text: 'Rainfall Forecast'}}}
+  });
+}
+
+function parseWeatherToCharts(raw) {
+  if (!raw) return;
+  try {
+    const lines = raw.trim().split('\n');
+    const daily = {};
+    lines.forEach(line => {
+      const d = line.match(/^(\d{4}-\d{2}-\d{2})/)?.[1];
+      const t = parseFloat(line.match(/:\s*([-\d.]+)°C/)?.[1]);
+      const r = parseFloat(line.match(/Rain\(3h\):\s*([-\d.]+)\s*mm/)?.[1] || 0);
+      if (d && !isNaN(t)) {
+        if (!daily[d]) daily[d] = {temps:[], rain:0};
+        daily[d].temps.push(t);
+        daily[d].rain += r;
+      }
+    });
+    const dates = Object.keys(daily).sort().slice(0, 5);
+    if (dates.length === 0) return;
+    renderCharts(
+      dates.map(d => new Date(d).toLocaleDateString('en', {month:'short', day:'numeric'})),
+      dates.map(d => Math.max(...daily[d].temps)),
+      dates.map(d => Math.min(...daily[d].temps)),
+      dates.map(d => Math.round(daily[d].rain*10)/10)
+    );
+  } catch (error) { console.warn('Failed to parse weather data:', error); }
+}
+
+/* ========= API Calls ========= */
+async function fetchWeather() {
+  const location = locationInput.value.trim();
+  if (!location) { toast("Please enter a location first.", "error"); return; }
+  try {
+    const payload = { message: "weather", output_language: 'en' };
+    const q = `?location=${encodeURIComponent(location)}`;
+    const data = await apiPost('/chat', payload, q);
+    if (data.weather_raw) {
+        parseWeatherToCharts(data.weather_raw);
+        toast("Weather updated!", "success");
+    } else {
+        toast(data.response, "error");
+    }
+  } catch (e) {
+    toast(`Error fetching weather: ${e.message}`, "error");
+  }
+}
+
+async function apiPost(path, body, query = '', isForm = false) {
+  const headers = {"Authorization": "Bearer " + AUTH_TOKEN};
+  const opts = { method: 'POST', headers };
+  if (isForm) {
+    opts.body = body; // FormData
+  } else {
+    headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(body);
+  }
+  const res = await fetch(API_BASE + path + query, opts);
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(`API Error ${res.status}: ${txt}`);
+  }
+  return res.json();
+}
+
+/* ========= Chat & Actions ========= */
+function sendQuick(text) {
+  messageInput.value = text;
+  onSend();
+}
+
+async function onSend(e) {
+  if (e) e.preventDefault();
+  const raw = messageInput.value.trim();
+  if (!raw) return;
+  
+  appendMessage(raw, 'user');
+  messageInput.value = '';
+  showTyping();
+  
+  sendBtn.disabled = true;
+  sendBtn.innerHTML = '<div class="spinner"></div>';
+
+  const location = locationInput.value.trim();
+  const output_language = outputLangSelect.value;
+
+  try {
+    const payload = { message: raw, output_language, return_audio: true };
+    const q = location ? `?location=${encodeURIComponent(location)}` : '';
+    const data = await apiPost('/chat', payload, q);
+    hideTyping();
+    appendMessage(data.response, 'bot', data.considered_documents);
+    if (data.weather_raw) parseWeatherToCharts(data.weather_raw);
+    if (data.tts_url) playAudio(data.tts_url);
+  } catch (error) {
+    hideTyping();
+    appendMessage(`Sorry, something went wrong: ${error.message}`, 'bot');
+    toast(error.message, "error");
+  } finally {
+    sendBtn.disabled = false;
+    sendBtn.textContent = 'Send';
+  }
+}
+
+function onAttachClick() {
+    toast("File attachment feature is coming soon!", "info");
+}
+
+async function uploadSoilReport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    toast(`Uploading ${file.name}...`, 'info');
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+        const data = await apiPost('/upload-soil-report', formData, '', true);
+        toast(`${data.filename} uploaded successfully. ${data.note}`, 'success');
+    } catch(e) {
+        toast(`Upload failed: ${e.message}`, 'error');
+    }
+    event.target.value = null; // Reset file input
+}
+
+/* ========= Voice Recording ========= */
+async function toggleRecording() {
+  if (isRecording) {
+    stopRecording();
+  } else {
+    await startRecording();
+  }
+}
+
+async function startRecording() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    isRecording = true;
+    audioChunks = [];
+    mediaRecorder = new MediaRecorder(stream);
+    mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
+    mediaRecorder.onstop = handleRecordingStop;
+    mediaRecorder.start();
+    updateRecordingUI(true);
+  } catch (err) {
+    toast("Microphone access denied. Please allow microphone permissions.", "error");
+    console.error("Mic access error:", err);
+  }
+}
+
+function stopRecording() {
+  if (mediaRecorder && mediaRecorder.state === "recording") {
+    mediaRecorder.stop();
+  }
+  isRecording = false;
+  updateRecordingUI(false);
+}
+
+async function handleRecordingStop() {
+    updateProcessingUI(true);
+    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+    const formData = new FormData();
+    formData.append('file', audioBlob, 'recording.webm');
+    
+    const location = locationInput.value.trim();
+    const output_language = outputLangSelect.value;
+
+    const q = new URLSearchParams({
+        return_audio: true,
+        output_language: output_language,
+        ...(location && { location: location })
+    }).toString();
+
+    try {
+        const data = await apiPost('/voice', formData, `?${q}`, true);
+        appendMessage(data.transcript, 'user');
+        appendMessage(data.response, 'bot');
+        if (data.weather_raw) parseWeatherToCharts(data.weather_raw);
+        if (data.tts_url) playAudio(data.tts_url);
+    } catch (error) {
+        toast(`Voice processing failed: ${error.message}`, "error");
+    } finally {
+        updateProcessingUI(false);
+    }
+}
+
+function updateRecordingUI(isStarting) {
+    if (isStarting) {
+        micBtn.classList.add('mic-recording');
+        let startTime = Date.now();
+        timerDisplay.style.display = 'block';
+        timerInterval = setInterval(() => {
+            const seconds = Math.floor((Date.now() - startTime) / 1000);
+            const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const secs = (seconds % 60).toString().padStart(2, '0');
+            timerDisplay.textContent = `${mins}:${secs}`;
+        }, 1000);
+    } else {
+        micBtn.classList.remove('mic-recording');
+        clearInterval(timerInterval);
+        timerDisplay.style.display = 'none';
+        timerDisplay.textContent = '00:00';
+    }
+}
+
+function updateProcessingUI(isProcessing) {
+    if (isProcessing) {
+        micBtn.classList.add('mic-processing');
+        micBtn.disabled = true;
+    } else {
+        micBtn.classList.remove('mic-processing');
+        micBtn.disabled = false;
+    }
+}
+
+function playAudio(url) {
+    const audio = new Audio(url);
+    const playerContainer = document.createElement('div');
+    playerContainer.className = 'audio-player';
+    
+    // Add the audio player to the last bot message
+    const lastMessage = chatWindow.querySelector('.bot-message:last-child');
+    if (lastMessage) {
+      playerContainer.appendChild(audio);
+      lastMessage.appendChild(playerContainer);
+      audio.controls = true;
+      audio.play();
+    }
+}
+
+/* ========= Event Listeners & Init ========= */
+function syncLangSelectors(e) {
+    const otherSelect = e.target.id === 'output-language' ? document.getElementById('sidebar-output-lang') : outputLangSelect;
+    if(otherSelect) otherSelect.value = e.target.value;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    updateCropCalendar();
+    fetchWeather();
+    outputLangSelect.addEventListener('change', syncLangSelectors);
+    
+    setTimeout(() => {
+        appendMessage("Hello! I am **KrishiBandhu**, your AI farming assistant. How can I help you today? You can ask me about weather, crops, or upload a soil report.", 'bot');
+    }, 500);
+});
+</script>
+</body>
+</html>
