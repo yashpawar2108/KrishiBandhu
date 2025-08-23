@@ -8,7 +8,7 @@ It combines a **FastAPI backend (AI + retrieval pipeline)** with a **responsive 
 
 ## 🚀 Features
 
-### 👨‍🌾 Farmer-Facing (Non-Technical)
+### 👨‍🌾 Farmer-Facing
 - Real-time **weather forecasts** with irrigation advice.  
 - Ask farming-related queries in **local languages** (Hindi, Bengali, Marathi, Tamil, etc.).  
 - **Upload soil/crop reports** and get instant analysis.  
