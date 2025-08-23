@@ -46,11 +46,11 @@ farmer-assistant/
 ├── documents/            # Uploaded soil/crop reports (PDFs)
 ├── static/
 │   └── tts/              # Generated audio responses (TTS files)
+    └── index.html        # Farmer-facing web app (chat + charts + voice)
 ├── tmp/
 │   └── farmer_cache/     # FAISS + BM25 vectorstore cache
-└── frontend/
-    └── index.html        # Farmer-facing web app (chat + charts + voice)
-
+    
+```
 ---
 
 ## 🔑 API Endpoints
