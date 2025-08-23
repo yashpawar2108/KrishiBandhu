@@ -4,7 +4,7 @@
 
 It combines a **FastAPI backend (AI + retrieval pipeline)** with a **responsive frontend (HTML/JS + Chart.js)**, enabling farmers to interact via **text, voice, or document uploads** in their preferred language.  
 **Demo**
-![Demo](Screenshot 2025-08-17 011712.png)
+![Demo](demo.png)
 
 ---
 
