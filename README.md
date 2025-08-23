@@ -3,6 +3,7 @@
 **KrishiBandhu** is a **multi-lingual, multi-modal AI assistant** designed to support Indian farmers with **real-time weather forecasts, soil/crop report analysis, fertilizer & pesticide recommendations, and conversational Q&A**.  
 
 It combines a **FastAPI backend (AI + retrieval pipeline)** with a **responsive frontend (HTML/JS + Chart.js)**, enabling farmers to interact via **text, voice, or document uploads** in their preferred language.  
+
 **Demo**
 ![Demo](demo.png)
 
