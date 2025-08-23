@@ -1,4 +1,4 @@
-# 🌾 KrishiBandhu – AI-Powered Farmer Assistant Chatbot
+# 🌾 KrishiBandhu – Farmer's Friend
 
 **KrishiBandhu** is a **multi-lingual, multi-modal AI assistant** designed to support Indian farmers with **real-time weather forecasts, soil/crop report analysis, fertilizer & pesticide recommendations, and conversational Q&A**.  
 
