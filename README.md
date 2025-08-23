@@ -38,13 +38,18 @@ It combines a **FastAPI backend (AI + retrieval pipeline)** with a **responsive 
   - Structured project layout with `/documents`, `/static/tts`, `/frontend`.  
 
 ---
+## 📂 Project Structure
+
+```bash
 farmer-assistant/
-│── main.py # FastAPI backend
-│── documents/ # Uploaded soil/crop reports
-│── static/tts/ # Audio responses
-│── /tmp/farmer_cache/ # FAISS + BM25 cache
-│── frontend/
-└── index.html # Farmer-facing web app (chat + charts + voice)
+├── main.py               # FastAPI backend (core API + logic)
+├── documents/            # Uploaded soil/crop reports (PDFs)
+├── static/
+│   └── tts/              # Generated audio responses (TTS files)
+├── tmp/
+│   └── farmer_cache/     # FAISS + BM25 vectorstore cache
+└── frontend/
+    └── index.html        # Farmer-facing web app (chat + charts + voice)
 
 ---
 
@@ -111,7 +116,3 @@ Pull requests and suggestions are welcome!
 - OpenWeather API for weather forecasts.  
 - Google services (STT, TTS, Translation) for multi-language support.  
 - Groq for powering fast LLaMA-3 inference.  
-
-
-## 📂 Project Structure
-
